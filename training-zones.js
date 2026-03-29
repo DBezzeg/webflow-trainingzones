@@ -35,11 +35,7 @@ function drawTrainingZones(containerId, width, height) {
     var timeMax = d3.max(powData, function(d) { return d.time; });
  
     var yMin = 0;
-    var yMax = Math.ceil(d3.max([
-        d3.max(powData, function(d) { return d.value; }),
-        d3.max(measuredMCPData, function(d) { return d.value; }),
-        d3.max(thresholdData, function(d) { return d.an_th; })
-    ]) / 50) * 50;
+    var yMax = 350;
  
     var isDark     = window.matchMedia('(prefers-color-scheme: dark)').matches;
     var gridColor  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
@@ -142,7 +138,7 @@ function formatTime(sec) {
 
     function draw() {
         var w = el.clientWidth  || 600;
-        var h = el.clientHeight || 280;
+        var h = el.clientHeight || 400;
         drawTrainingZones('training-zones-graph', w, h);
     }
 
