@@ -116,10 +116,9 @@ function drawTrainingZones(containerId, width, height) {
     // without depending on an external stylesheet
     g.append('path')
         .datum(powData)
-        .attr('class', 'power-line')
         .attr('clip-path', 'url(#clip)')
         .attr('fill', 'none')
-        .attr('stroke', '#ffffff')
+        .attr('stroke', '#7C68EE')
         .attr('stroke-width', 2)
         .attr('stroke-linejoin', 'round')
         .attr('stroke-linecap', 'round')
