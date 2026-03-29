@@ -138,7 +138,7 @@ function formatTime(sec) {
 
     function draw() {
         var w = el.clientWidth  || 600;
-        var h = 400;
+        var h = el.clientHeight || 280;
         drawTrainingZones('training-zones-graph', w, h);
     }
 
