@@ -11,142 +11,118 @@ var thresholdData = [{"time":516,"an_th":305,"vo2_th":207.4,"endu_th":170.8,"reg
 function drawTrainingZones(containerId, width, height) {
     var container = document.getElementById(containerId);
     if (!container) { console.error('Training Zones: element #' + containerId + ' not found.'); return; }
-
-    const margin = { top: 20, right: 50, bottom: 30, left: 65 };
+ 
+    var isMobile = width < 480;
+    var isSmall  = width < 640;
+ 
+    var margin = {
+        top:    10,
+        right:  isMobile ? 10 : 40,
+        bottom: isMobile ? 18 : 28,
+        left:   isMobile ? 35 : 56
+    };
     var innerWidth  = width  - margin.left - margin.right;
     var innerHeight = height - margin.top  - margin.bottom;
-
+ 
     var svg = d3.select(container);
     svg.selectAll('*').remove();
     svg.attr('viewBox', '0 0 ' + width + ' ' + height);
-
-    const g = svg
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    // FIX #1: xScale domain derived from actual time values, not array indices
-    const timeMin = d3.min(powData, d => d.time);
-    const timeMax = d3.max(powData, d => d.time);
-
-    const yMin = 0;
-    // FIX #5 (minor): yMax derived from data rather than hardcoded
-    const yMax = Math.ceil(d3.max([
-        d3.max(powData, d => d.value),
-        d3.max(measuredMCPData, d => d.value),
-        d3.max(thresholdData, d => d.an_th)
+ 
+    var g = svg.append('g')
+        .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+ 
+    var timeMin = d3.min(powData, function(d) { return d.time; });
+    var timeMax = d3.max(powData, function(d) { return d.time; });
+ 
+    var yMin = 0;
+    var yMax = Math.ceil(d3.max([
+        d3.max(powData, function(d) { return d.value; }),
+        d3.max(measuredMCPData, function(d) { return d.value; }),
+        d3.max(thresholdData, function(d) { return d.an_th; })
     ]) / 50) * 50;
-
-    // ── Scales ─────────────────────────────────────────────────────────────────
-    const xScale = d3
-        .scaleLinear()
-        .domain([timeMin, timeMax])
-        .range([0, innerWidth]);
-
-    const yPOWScale = d3
-        .scaleLinear()
-        .domain([yMin, yMax])
-        .range([innerHeight, 0]);
-
-    // ── Line generators ────────────────────────────────────────────────────────
-    // FIX #2: all generators now consistently use xScale directly (no xs param needed)
-    const powLine = d3.line()
-        .x(d => xScale(d.time))
-        .y(d => yPOWScale(d.value));
-
-    const measuredMCPLine = d3.line()
-        .defined(d => d.value !== null)
-        .x(d => xScale(d.time))
-        .y(d => yPOWScale(d.value));
-
-    // ── Area generators ────────────────────────────────────────────────────────
-    const defined = (d) => d.mcp !== null;
-    const clamp = (v) => Math.min(v, yMax);
-
-    const anArea   = d3.area().defined(defined).x(d => xScale(d.time)).y0(d => yPOWScale(d.mcp)).y1(d => yPOWScale(clamp(d.an_th)));
-    const vo2Area  = d3.area().defined(defined).x(d => xScale(d.time)).y0(d => yPOWScale(d.vo2_th)).y1(d => yPOWScale(d.mcp));
-    const enduArea = d3.area().defined(defined).x(d => xScale(d.time)).y0(d => yPOWScale(d.endu_th)).y1(d => yPOWScale(d.vo2_th));
-    const regArea  = d3.area().defined(defined).x(d => xScale(d.time)).y0(d => yPOWScale(d.reg_th)).y1(d => yPOWScale(d.endu_th));
-
-    // ── Background rect ────────────────────────────────────────────────────────
-    g.append('rect')
-        .attr('width', innerWidth)
-        .attr('height', innerHeight)
-        .style('fill', 'transparent')
-        .lower();
-
-    // FIX #3: clipPath appended to g (translated group), not svg root
-    // This ensures the clip rect aligns correctly with the content
-    g.append('clipPath')
-        .attr('id', 'clip')
-        .append('rect')
-        .attr('width', innerWidth)
-        .attr('height', innerHeight);
-
-    // ── Draw zones ─────────────────────────────────────────────────────────────
-    const zones = [
+ 
+    var isDark     = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var gridColor  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+    var axisColor  = isDark ? 'rgba(255,255,255,0.5)'  : 'rgba(0,0,0,0.5)';
+    var tickFontSz = isMobile ? '10px' : '12px';
+ 
+    var xScale = d3.scaleLinear().domain([timeMin, timeMax]).range([0, innerWidth]);
+    var yPOWScale = d3.scaleLinear().domain([yMin, yMax]).range([innerHeight, 0]);
+ 
+    var powLine = d3.line()
+        .x(function(d) { return xScale(d.time); })
+        .y(function(d) { return yPOWScale(d.value); });
+ 
+    var measuredMCPLine = d3.line()
+        .defined(function(d) { return d.value !== null; })
+        .x(function(d) { return xScale(d.time); })
+        .y(function(d) { return yPOWScale(d.value); });
+ 
+    var defined = function(d) { return d.mcp !== null; };
+    var clamp   = function(v) { return Math.min(v, yMax); };
+ 
+    var anArea   = d3.area().defined(defined).x(function(d) { return xScale(d.time); }).y0(function(d) { return yPOWScale(d.mcp); }).y1(function(d) { return yPOWScale(clamp(d.an_th)); });
+    var vo2Area  = d3.area().defined(defined).x(function(d) { return xScale(d.time); }).y0(function(d) { return yPOWScale(d.vo2_th); }).y1(function(d) { return yPOWScale(d.mcp); });
+    var enduArea = d3.area().defined(defined).x(function(d) { return xScale(d.time); }).y0(function(d) { return yPOWScale(d.endu_th); }).y1(function(d) { return yPOWScale(d.vo2_th); });
+    var regArea  = d3.area().defined(defined).x(function(d) { return xScale(d.time); }).y0(function(d) { return yPOWScale(d.reg_th); }).y1(function(d) { return yPOWScale(d.endu_th); });
+ 
+    g.append('rect').attr('width', innerWidth).attr('height', innerHeight).style('fill', 'transparent').lower();
+ 
+    g.append('clipPath').attr('id', 'clip').append('rect').attr('width', innerWidth).attr('height', innerHeight);
+ 
+    var zones = [
         { area: regArea,  fill: '#ffb74d' },
         { area: enduArea, fill: '#81c784' },
         { area: vo2Area,  fill: '#e57373' },
-        { area: anArea,   fill: '#64b5f6' },
+        { area: anArea,   fill: '#64b5f6' }
     ];
-
-    zones.forEach(({ area, fill }) => {
-        g.append('path')
-            .datum(thresholdData)
-            .attr('fill', fill)
-            .attr('fill-opacity', 0.8)
-            .attr('clip-path', 'url(#clip)')
-            .attr('pointer-events', 'none')
-            .attr('d', area);
+ 
+    zones.forEach(function(z) {
+        g.append('path').datum(thresholdData).attr('fill', z.fill).attr('fill-opacity', 0.8).attr('clip-path', 'url(#clip)').attr('pointer-events', 'none').attr('d', z.area);
     });
-
+ 
+    // ── X gridlines ────────────────────────────────────────────────────────────
+    g.append('g')
+        .attr('transform', 'translate(0,' + innerHeight + ')')
+        .call(d3.axisBottom(xScale).ticks(10).tickSize(-innerHeight).tickFormat(function() { return ''; }))
+        .call(function(ax) { ax.select('.domain').remove(); ax.selectAll('line').attr('stroke', gridColor); });
+ 
+    // ── Y gridlines ────────────────────────────────────────────────────────────
+    g.append('g')
+        .call(d3.axisLeft(yPOWScale).tickValues(d3.range(yMin, yMax + 1, 50)).tickSize(-innerWidth).tickFormat(function() { return ''; }))
+        .call(function(ax) { ax.select('.domain').remove(); ax.selectAll('line').attr('stroke', gridColor); });
+ 
+    // ── X axis ─────────────────────────────────────────────────────────────────
+    g.append('g')
+        .attr('transform', 'translate(0,' + innerHeight + ')')
+        .call(d3.axisBottom(xScale).tickFormat(function(d) { return formatTime(Number(d) * 4); }))
+        .call(function(ax) {
+            ax.select('.domain').attr('stroke', gridColor);
+            ax.selectAll('line').attr('stroke', gridColor);
+            ax.selectAll('text').style('font-size', tickFontSz).style('fill', axisColor);
+        });
+ 
+    // ── Y axis ─────────────────────────────────────────────────────────────────
+    g.append('g')
+        .call(d3.axisLeft(yPOWScale).tickValues(d3.range(yMin, yMax + 1, 50)).tickFormat(function(d) { return d + ' W'; }))
+        .call(function(ax) {
+            ax.select('.domain').attr('stroke', gridColor);
+            ax.selectAll('line').attr('stroke', gridColor);
+            ax.selectAll('text').style('font-size', tickFontSz).style('fill', axisColor);
+        });
+ 
     // ── Draw lines ─────────────────────────────────────────────────────────────
     g.append('path')
         .datum(measuredMCPData)
-        .attr('stroke', '#000000')
-        .attr('clip-path', 'url(#clip)')
-        .attr('fill', 'none')
-        .attr('stroke-width', 2)
-        .attr('stroke-linejoin', 'round')
-        .attr('stroke-linecap', 'round')
-        .attr('pointer-events', 'none')
-        .attr('d', measuredMCPLine);
-
-    // FIX #4: power-line now has explicit inline stroke/fill so it renders
-    // without depending on an external stylesheet
+        .attr('stroke', '#000000').attr('clip-path', 'url(#clip)').attr('fill', 'none')
+        .attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round')
+        .attr('pointer-events', 'none').attr('d', measuredMCPLine);
+ 
     g.append('path')
         .datum(powData)
-        .attr('clip-path', 'url(#clip)')
-        .attr('fill', 'none')
-        .attr('stroke', '#7C68EE')
-        .attr('stroke-width', 2)
-        .attr('stroke-linejoin', 'round')
-        .attr('stroke-linecap', 'round')
-        .attr('pointer-events', 'none')
-        .attr('d', powLine);
-
-    // ── Draw axes ──────────────────────────────────────────────────────────────
-    const xAxis = d3.axisBottom(xScale).tickFormat(d => formatTime(Number(d) * 4));
-    g.append('g')
-        .attr('class', 'mcp-x-axis')
-        .attr('transform', `translate(0, ${innerHeight})`)
-        .call(xAxis);
-
-    g.append('g')
-        .attr('class', 'mcp-y-axis')
-        .call(d3.axisLeft(yPOWScale).tickValues(d3.range(yMin, yMax + 1, 50)))
-        .selectAll('text')
-        .text(d => `${d} W`);
-
-    // ── Draw grid ──────────────────────────────────────────────────────────────
-    g.append('g')
-        .attr('class', 'main-grid')
-        .call(
-            d3.axisLeft(yPOWScale)
-                .tickValues(d3.range(yMin, yMax + 1, 50))
-                .tickSize(-innerWidth)
-                .tickFormat(() => '')
-        );
+        .attr('clip-path', 'url(#clip)').attr('fill', 'none').attr('stroke', '#7C68EE')
+        .attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round')
+        .attr('pointer-events', 'none').attr('d', powLine);
 }
 
 function formatTime(sec) {
