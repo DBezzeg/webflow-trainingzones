@@ -34,7 +34,7 @@ function drawTrainingZones(containerId, width, height) {
     var timeMin = d3.min(powData, function(d) { return d.time; });
     var timeMax = d3.max(powData, function(d) { return d.time; });
  
-    var yMin = 0;
+    var yMin = 120;
     var yMax = 350;
  
     var isDark     = window.matchMedia('(prefers-color-scheme: dark)').matches;
