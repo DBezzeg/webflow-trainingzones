@@ -138,7 +138,7 @@ function formatTime(sec) {
 
     function draw() {
         var w = el.clientWidth || 300;
-        var h = Math.round(w * 0.65); // adjust ratio — 0.45 = ~16:7 feel
+        var h = Math.round(w * 0.25); // adjust ratio — 0.45 = ~16:7 feel
         drawTrainingZones('training-zones-graph', w, h);
     }
  
